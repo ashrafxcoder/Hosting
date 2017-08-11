@@ -15,7 +15,6 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         public readonly static string Container = "Container";
         public readonly static string Services = "Services";
 
-
         public static StartupMethods LoadMethods(IServiceProvider hostingServiceProvider, Type startupType, string environmentName)
         {
             var configureMethod = FindConfigureDelegate(startupType, environmentName);
@@ -148,12 +147,11 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             {
                 var selectedMethods = methods.Where(method =>
                 {
-                    var start = method.Name.IndexOf(methodNameStart, StringComparison.Ordinal);
-                    if (start != 0)
+                    if (!method.Name.StartsWith(methodNameStart, StringComparison.Ordinal))
                     {
                         return false;
                     }
-                    var middle = method.Name.IndexOf(environmentName, StringComparison.OrdinalIgnoreCase);
+                    var middle = method.Name.IndexOf(environmentName, methodNameStart.Length, StringComparison.OrdinalIgnoreCase);
                     if (middle != methodNameStart.Length)
                     {
                         return false;
@@ -162,7 +160,6 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                         && method.Name.Length == methodNameStart.Length + methodNameEnd.Length + environmentName.Length;
                 }).ToList();
 
-                //var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithEnv)).ToList();
                 if (selectedMethods.Count > 1)
                 {
                     throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", ""/*methodNameWithEnv*/));
