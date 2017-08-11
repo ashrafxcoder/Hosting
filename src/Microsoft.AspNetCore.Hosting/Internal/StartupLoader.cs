@@ -69,7 +69,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
         public static Type FindStartupType(string startupAssemblyName, string environmentName)
         {
-           if (string.IsNullOrEmpty(startupAssemblyName))
+            if (string.IsNullOrEmpty(startupAssemblyName))
             {
                 throw new ArgumentException(
                     string.Format("A startup method, startup type or startup assembly is required. If specifying an assembly, '{0}' cannot be null or empty.",
@@ -171,7 +171,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             if (methodInfo == null)
             {
                 var methodNameWithNoEnv = methodNameStart + methodNameEnd;
-                var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithNoEnv)).ToList();
+                var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithNoEnv, StringComparison.Ordinal)).ToList();
                 if (selectedMethods.Count > 1)
                 {
                     throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", methodNameWithNoEnv));
