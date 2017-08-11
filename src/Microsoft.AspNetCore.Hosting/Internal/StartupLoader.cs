@@ -11,9 +11,9 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 {
     public class StartupLoader
     {
-        public readonly static string Configure = "Configure";
-        public readonly static string Container = "Container";
-        public readonly static string Services = "Services";
+        private readonly static string Configure = "Configure";
+        private readonly static string Container = "Container";
+        private readonly static string Services = "Services";
 
         public static StartupMethods LoadMethods(IServiceProvider hostingServiceProvider, Type startupType, string environmentName)
         {
@@ -162,13 +162,13 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
                 if (selectedMethods.Count > 1)
                 {
-                    throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", ""/*methodNameWithEnv*/));
+                    throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", methodNameStart + environmentName + methodNameEnd));
                 }
                 methodInfo = selectedMethods.FirstOrDefault();
             }
-            var methodNameWithNoEnv = methodNameStart + methodNameEnd;
             if (methodInfo == null)
             {
+                var methodNameWithNoEnv = methodNameStart + methodNameEnd;
                 var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithNoEnv)).ToList();
                 if (selectedMethods.Count > 1)
                 {
@@ -183,7 +183,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 {
                     throw new InvalidOperationException(string.Format("A public method named '{0}' or '{1}' could not be found in the '{2}' type.",
                         methodNameStart + environmentName + methodNameEnd,
-                        methodNameWithNoEnv,
+                        methodNameStart + methodNameEnd,
                         startupType.FullName));
 
                 }
