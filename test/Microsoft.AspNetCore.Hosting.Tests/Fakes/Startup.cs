@@ -49,6 +49,16 @@ namespace Microsoft.AspNetCore.Hosting.Fakes
             });
         }
 
+        public static void ConfigureCaseInsensitiveServices(IServiceCollection services)
+        {
+            services.AddOptions();
+            services.Configure<FakeOptions>(o =>
+            {
+                o.Configured = true;
+                o.Environment = "CaseInsensitive";
+            });
+        }
+
         public static IServiceProvider ConfigureStaticProviderServices()
         {
             var services = new ServiceCollection().AddOptions();

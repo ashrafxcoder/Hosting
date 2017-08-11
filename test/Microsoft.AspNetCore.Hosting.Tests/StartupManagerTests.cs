@@ -88,6 +88,29 @@ namespace Microsoft.AspNetCore.Hosting.Tests
             Assert.Equal(environment, options.Environment);
         }
 
+        [Theory]
+        [InlineData("caseinsensitive")]
+        [InlineData("CaseInsensitive")]
+        [InlineData("CASEINSENSITIVE")]
+        [InlineData("CaSEiNSENsitiVE")]
+        public void StartupClassAddsConfigureServicesToApplicationServicesCaseInsensitive(string environment)
+        {
+            var services = new ServiceCollection()
+                .AddSingleton<IServiceProviderFactory<IServiceCollection>, DefaultServiceProviderFactory>()
+                .BuildServiceProvider();
+            var type = StartupLoader.FindStartupType("Microsoft.AspNetCore.Hosting.Tests", environment);
+            var startup = StartupLoader.LoadMethods(services, type, environment);
+
+            var app = new ApplicationBuilder(services);
+            app.ApplicationServices = startup.ConfigureServicesDelegate(new ServiceCollection());
+            startup.ConfigureDelegate(app);
+
+            var options = app.ApplicationServices.GetRequiredService<IOptions<FakeOptions>>().Value;
+            Assert.NotNull(options);
+            Assert.True(options.Configured);
+            Assert.Equal("CaseInsensitive", options.Environment);
+        }
+
         [Fact]
         public void StartupWithNoConfigureThrows()
         {

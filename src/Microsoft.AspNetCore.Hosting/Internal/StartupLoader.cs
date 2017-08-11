@@ -11,6 +11,11 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 {
     public class StartupLoader
     {
+        public readonly static string Configure = "Configure";
+        public readonly static string Container = "Container";
+        public readonly static string Services = "Services";
+
+
         public static StartupMethods LoadMethods(IServiceProvider hostingServiceProvider, Type startupType, string environmentName)
         {
             var configureMethod = FindConfigureDelegate(startupType, environmentName);
@@ -65,7 +70,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
         public static Type FindStartupType(string startupAssemblyName, string environmentName)
         {
-            if (string.IsNullOrEmpty(startupAssemblyName))
+           if (string.IsNullOrEmpty(startupAssemblyName))
             {
                 throw new ArgumentException(
                     string.Format("A startup method, startup type or startup assembly is required. If specifying an assembly, '{0}' cannot be null or empty.",
@@ -117,50 +122,70 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
         private static ConfigureBuilder FindConfigureDelegate(Type startupType, string environmentName)
         {
-            var configureMethod = FindMethod(startupType, "Configure{0}", environmentName, typeof(void), required: true);
+            var configureMethod = FindMethod(startupType, Configure, "", environmentName, typeof(void), required: true);
             return new ConfigureBuilder(configureMethod);
         }
 
         private static ConfigureContainerBuilder FindConfigureContainerDelegate(Type startupType, string environmentName)
         {
-            var configureMethod = FindMethod(startupType, "Configure{0}Container", environmentName, typeof(void), required: false);
+            var configureMethod = FindMethod(startupType, Configure, Container, environmentName, typeof(void), required: false);
             return new ConfigureContainerBuilder(configureMethod);
         }
 
         private static ConfigureServicesBuilder FindConfigureServicesDelegate(Type startupType, string environmentName)
         {
-            var servicesMethod = FindMethod(startupType, "Configure{0}Services", environmentName, typeof(IServiceProvider), required: false)
-                ?? FindMethod(startupType, "Configure{0}Services", environmentName, typeof(void), required: false);
+            var servicesMethod = FindMethod(startupType, Configure, Services, environmentName, typeof(IServiceProvider), required: false)
+                ?? FindMethod(startupType, Configure, Services, environmentName, typeof(void), required: false);
             return new ConfigureServicesBuilder(servicesMethod);
         }
 
-        private static MethodInfo FindMethod(Type startupType, string methodName, string environmentName, Type returnType = null, bool required = true)
+        private static MethodInfo FindMethod(Type startupType, string methodNameStart, string methodNameEnd, string environmentName, Type returnType = null, bool required = true)
         {
-            var methodNameWithEnv = string.Format(CultureInfo.InvariantCulture, methodName, environmentName);
-            var methodNameWithNoEnv = string.Format(CultureInfo.InvariantCulture, methodName, "");
-
+            MethodInfo methodInfo = null;
             var methods = startupType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
-            var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithEnv)).ToList();
-            if (selectedMethods.Count > 1)
+
+            if (environmentName != null)
             {
-                throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", methodNameWithEnv));
+                var selectedMethods = methods.Where(method =>
+                {
+                    var start = method.Name.IndexOf(methodNameStart, StringComparison.Ordinal);
+                    if (start != 0)
+                    {
+                        return false;
+                    }
+                    var middle = method.Name.IndexOf(environmentName, StringComparison.OrdinalIgnoreCase);
+                    if (middle != methodNameStart.Length)
+                    {
+                        return false;
+                    }
+                    return method.Name.EndsWith(methodNameEnd, StringComparison.Ordinal)
+                        && method.Name.Length == methodNameStart.Length + methodNameEnd.Length + environmentName.Length;
+                }).ToList();
+
+                //var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithEnv)).ToList();
+                if (selectedMethods.Count > 1)
+                {
+                    throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", ""/*methodNameWithEnv*/));
+                }
+                methodInfo = selectedMethods.FirstOrDefault();
             }
-            if (selectedMethods.Count == 0)
+            var methodNameWithNoEnv = methodNameStart + methodNameEnd;
+            if (methodInfo == null)
             {
-                selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithNoEnv)).ToList();
+                var selectedMethods = methods.Where(method => method.Name.Equals(methodNameWithNoEnv)).ToList();
                 if (selectedMethods.Count > 1)
                 {
                     throw new InvalidOperationException(string.Format("Having multiple overloads of method '{0}' is not supported.", methodNameWithNoEnv));
                 }
+                methodInfo = selectedMethods.FirstOrDefault();
             }
 
-            var methodInfo = selectedMethods.FirstOrDefault();
             if (methodInfo == null)
             {
                 if (required)
                 {
                     throw new InvalidOperationException(string.Format("A public method named '{0}' or '{1}' could not be found in the '{2}' type.",
-                        methodNameWithEnv,
+                        methodNameStart + environmentName + methodNameEnd,
                         methodNameWithNoEnv,
                         startupType.FullName));
 
