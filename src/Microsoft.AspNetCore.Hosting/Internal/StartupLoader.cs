@@ -156,8 +156,9 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                     {
                         return false;
                     }
-                    return method.Name.EndsWith(methodNameEnd, StringComparison.Ordinal)
-                        && method.Name.Length == methodNameStart.Length + methodNameEnd.Length + environmentName.Length;
+                    var endIndex = methodNameStart.Length + environmentName.Length;
+                    return method.Name.IndexOf(methodNameEnd, endIndex, StringComparison.Ordinal) == endIndex
+                        && method.Name.Length == endIndex + methodNameEnd.Length;
                 }).ToList();
 
                 if (selectedMethods.Count > 1)
@@ -166,6 +167,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 }
                 methodInfo = selectedMethods.FirstOrDefault();
             }
+
             if (methodInfo == null)
             {
                 var methodNameWithNoEnv = methodNameStart + methodNameEnd;
