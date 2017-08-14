@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Testing.xunit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DiagnosticAdapter;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -29,7 +30,6 @@ namespace Microsoft.AspNetCore.TestHost
             // Act & Assert (Does not throw)
             new TestServer(new WebHostBuilder().Configure(app => { }));
         }
-
 
         [Fact]
         public void DoesNotCaptureStartupErrorsByDefault()
